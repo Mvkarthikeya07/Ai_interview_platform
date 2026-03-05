@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ================= FULLSCREEN GATE ================= -->
+<div id="fullscreenGate" style="text-align:center; padding:50px;">
+    <h2>AI Proctored Interview Mode</h2>
+    <p>Fullscreen and webcam access required.</p>
+    <button onclick="startExam()">Start Interview</button>
+</div>
+
+<!-- ================= EXAM CONTAINER ================= -->
+<div class="interview-card" id="examContainer" style="display:none;">
+
+    <div id="timer" style="font-size:18px; color:#f87171;">
+        Time Left: <span id="time">60</span> seconds
+    </div>
+
+    <h4 id="questionHeader">
+        Question {{ question_number }} / {{ total_questions }}
+    </h4>
+
+    <h3 id="questionText">{{ question }}</h3>
+
+    <form id="answerForm">
+        <input type="hidden" id="questionField" name="question" value="{{ question }}">
+        <textarea id="answerBox" name="answer" rows="8" required></textarea>
+        <br><br>
+        <button type="submit">Submit Answer</button>
+    </form>
+
+    <div style="margin-top:20px;">
+        <video id="webcam" width="320" height="240" autoplay muted></video>
+    </div>
+
+</div>
+
+<!-- ================= WARNING MODAL ================= -->
+<div id="warningModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; text-align:center;">
+    <div style="background:#1e1e2e; border:2px solid #f87171; border-radius:12px; padding:40px 50px; max-width:460px; width:90%; box-shadow:0 0 40px rgba(248,113,113,0.4);">
+        <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
+        <h2 style="color:#f87171; margin:0 0 10px;">Security Warning</h2>
+        <p id="warningMessage" style="color:#e2e8f0; font-size:15px; margin-bottom:6px;"></p>
+        <p style="color:#94a3b8; font-size:13px; margin-bottom:24px;">
+            Warning <span id="warningCount" style="color:#f87171; font-weight:bold;"></span> of 3 —
+            after 3 warnings your interview will be <strong style="color:#f87171;">automatically submitted</strong>.
+        </p>
+        <button id="warningBtn" style="background:#f87171; color:#fff; border:none; padding:12px 32px; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer;">
+            I Understand — Continue
+        </button>
+    </div>
+</div>
+
+<!-- ================= MEDIAPIPE CDN ================= -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<script>
+
+let monitoringActive = false;
+let examStarted = false;
+let timeLeft = 60;
+let countdown;
+
+/* ================= WARNING SYSTEM ================= */
+
+let fullscreenWarnings = 0;
+let faceWarnings = 0;
+let warningActive = false;
+
+function showWarning(type, onContinue) {
+    if (warningActive) return;
+    warningActive = true;
+    monitoringActive = false;
+
+    const modal = document.getElementById("warningModal");
+    const msg   = document.getElementById("warningMessage");
+    const count = document.getElementById("warningCount");
+    const btn   = document.getElementById("warningBtn");
+
+    if (type === "fullscreen") {
+        fullscreenWarnings++;
+        msg.textContent = "You exited fullscreen mode. Please return to fullscreen to continue your interview.";
+        count.textContent = fullscreenWarnings;
+    } else {
+        faceWarnings++;
+        msg.textContent = "Suspicious head movement detected. Please keep your eyes on the screen.";
+        count.textContent = faceWarnings;
+    }
+
+    modal.style.display = "flex";
+
+    btn.onclick = function () {
+        modal.style.display = "none";
+        warningActive = false;
+        onContinue();
+        setTimeout(() => { monitoringActive = true; }, 2000);
+    };
+}
+
+/* ================= START EXAM ================= */
+
+function startExam() {
+    document.documentElement.requestFullscreen().then(() => {
+
+        document.getElementById("fullscreenGate").style.display = "none";
+        document.getElementById("examContainer").style.display = "block";
+
+        examStarted = true;
+
+        startTimer();
+        startWebcam();
+        startHeadPoseDetection();
+
+        setTimeout(() => {
+            monitoringActive = true;
+        }, 3000);
+    });
+}
+
+/* ================= TIMER ================= */
+
+function startTimer() {
+    countdown = setInterval(() => {
+        timeLeft--;
+        document.getElementById("time").innerText = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            skipQuestion();
+        }
+    }, 1000);
+}
+
+/* ================= AJAX SUBMIT ================= */
+
+document.getElementById("answerForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    let formData = new FormData(this);
+
+    fetch("/submit_answer", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.completed) {
+            window.location.href = "/report";
+            return;
+        }
+
+        document.getElementById("questionText").innerText = data.question;
+        document.getElementById("questionHeader").innerText =
+            "Question " + data.question_number + " / {{ total_questions }}";
+
+        document.getElementById("questionField").value = data.question;
+        document.getElementById("answerBox").value = "";
+
+        clearInterval(countdown);
+        timeLeft = 60;
+        startTimer();
+    });
+});
+
+/* ================= SKIP QUESTION (TIMER) ================= */
+
+function skipQuestion() {
+
+    let question = document.getElementById("questionField").value;
+
+    let formData = new FormData();
+    formData.append("question", question);
+
+    fetch("/skip_question", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.completed) {
+            window.location.href = "/report";
+            return;
+        }
+
+        document.getElementById("questionText").innerText = data.question;
+        document.getElementById("questionHeader").innerText =
+            "Question " + data.question_number + " / {{ total_questions }}";
+
+        document.getElementById("questionField").value = data.question;
+        document.getElementById("answerBox").value = "";
+
+        timeLeft = 60;
+        startTimer();
+    });
+}
+
+/* ================= SECURITY MONITOR ================= */
+
+// ESC / fullscreen exit
+document.addEventListener("fullscreenchange", function() {
+    if (examStarted && !document.fullscreenElement) {
+        if (fullscreenWarnings >= 3) {
+            autoSubmit();
+        } else {
+            showWarning("fullscreen", function() {
+                document.documentElement.requestFullscreen().catch(() => {});
+            });
+        }
+    }
+});
+
+// Tab switch
+document.addEventListener("visibilitychange", function() {
+    if (monitoringActive && document.hidden) {
+        if (fullscreenWarnings >= 3) {
+            autoSubmit();
+        } else {
+            showWarning("fullscreen", function() {
+                document.documentElement.requestFullscreen().catch(() => {});
+            });
+        }
+    }
+});
+
+// Window blur
+window.addEventListener("blur", function() {
+    if (monitoringActive) {
+        if (fullscreenWarnings >= 3) {
+            autoSubmit();
+        } else {
+            showWarning("fullscreen", function() {
+                document.documentElement.requestFullscreen().catch(() => {});
+            });
+        }
+    }
+});
+
+/* ================= AUTO SUBMIT ================= */
+
+function autoSubmit() {
+    monitoringActive = false;
+    warningActive = false;
+    window.location.href = "/force_submit";
+}
+
+/* ================= WEBCAM ================= */
+
+function startWebcam() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            document.getElementById("webcam").srcObject = stream;
+        })
+        .catch(() => autoSubmit());
+}
+
+/* ================= COPY-PASTE BLOCK ================= */
+
+document.addEventListener("copy", e => e.preventDefault());
+document.addEventListener("paste", e => e.preventDefault());
+document.addEventListener("cut", e => e.preventDefault());
+document.addEventListener("contextmenu", e => e.preventDefault());
+
+document.addEventListener("keydown", function(e) {
+    if (e.ctrlKey && ["c","v","x","u"].includes(e.key.toLowerCase())) e.preventDefault();
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "i") e.preventDefault();
+    if (e.key === "F12") e.preventDefault();
+});
+
+/* ================= HEAD POSE DETECTION ================= */
+
+function startHeadPoseDetection() {
+
+    let violationTime = 0;
+    const threshold = 3000;
+    const turnLimit = 0.15;
+
+    const videoElement = document.getElementById("webcam");
+
+    const faceMesh = new FaceMesh({
+        locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        }
+    });
+
+    faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+
+    faceMesh.onResults(results => {
+
+        if (!monitoringActive) return;
+
+        if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+            violationTime += 100;
+        } else {
+
+            const landmarks = results.multiFaceLandmarks[0];
+
+            const nose = landmarks[1];
+            const left = landmarks[234];
+            const right = landmarks[454];
+
+            let centerX = (left.x + right.x) / 2;
+            let horizontalTurn = Math.abs(nose.x - centerX);
+
+            if (horizontalTurn > turnLimit) {
+                violationTime += 100;
+            } else {
+                violationTime = 0;
+            }
+        }
+
+        if (violationTime > threshold) {
+            violationTime = 0;
+            if (faceWarnings >= 3) {
+                autoSubmit();
+            } else {
+                showWarning("face", function() {
+                    // monitoring resumes automatically via setTimeout in showWarning
+                });
+            }
+        }
+    });
+
+    const camera = new Camera(videoElement, {
+        onFrame: async () => {
+            await faceMesh.send({ image: videoElement });
+        },
+        width: 320,
+        height: 240
+    });
+
+    camera.start();
+}
+
+</script>
+
+{% endblock %}

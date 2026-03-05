@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="report-card">
+
+    <h2>Interview Report</h2>
+
+    <h3>Overall Score: {{ overall_score }}/10</h3>
+    <p><strong>Strength Area:</strong> {{ strength }}</p>
+    <p><strong>Confidence Level:</strong> {{ confidence }}</p>
+
+    <!-- Charts Section -->
+    <div style="display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap;">
+
+        <!-- Radar Chart -->
+        <div class="chart-container" style="width:400px;">
+            <canvas id="scoreChart"></canvas>
+        </div>
+
+        <!-- Plagiarism Pie Chart -->
+        <div style="width:300px;">
+            <canvas id="plagiarismChart"></canvas>
+        </div>
+
+    </div>
+
+    <hr>
+
+    <h3>Detailed Breakdown</h3>
+
+    {% for r in responses %}
+        <div class="response-block">
+
+            <p><strong>Question:</strong> {{ r.question }}</p>
+
+            <p><strong>Your Answer:</strong></p>
+            <div class="answer-box">
+                {{ r.answer }}
+            </div>
+
+            {% if r.score < 6 %}
+                <p style="color:#f87171;"><strong>Correct Answer:</strong></p>
+                <div class="correct-box">
+                    {{ r.correct_answer }}
+                </div>
+            {% endif %}
+
+            <p><strong>Score:</strong> {{ r.score }}/10</p>
+
+        </div>
+        <hr>
+    {% endfor %}
+
+    <!-- ============================
+         FEEDBACK SECTION
+         ============================ -->
+    <div class="feedback-section feedback-{{ feedback_color }}" style="
+        margin-top: 40px;
+        border-radius: 12px;
+        padding: 30px 35px;
+        {% if feedback_color == 'green' %}
+            background: linear-gradient(135deg, #d1fae5, #ecfdf5);
+            border-left: 6px solid #10b981;
+        {% elif feedback_color == 'blue' %}
+            background: linear-gradient(135deg, #dbeafe, #eff6ff);
+            border-left: 6px solid #3b82f6;
+        {% elif feedback_color == 'orange' %}
+            background: linear-gradient(135deg, #ffedd5, #fff7ed);
+            border-left: 6px solid #f97316;
+        {% else %}
+            background: linear-gradient(135deg, #fee2e2, #fff5f5);
+            border-left: 6px solid #ef4444;
+        {% endif %}
+    ">
+
+        <!-- Feedback Header -->
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+            <div style="
+                width: 52px; height: 52px;
+                border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 26px;
+                {% if feedback_color == 'green' %}background:#10b981;
+                {% elif feedback_color == 'blue' %}background:#3b82f6;
+                {% elif feedback_color == 'orange' %}background:#f97316;
+                {% else %}background:#ef4444;{% endif %}
+                color: white;
+            ">
+                {% if feedback_color == 'green' %}🏆
+                {% elif feedback_color == 'blue' %}👍
+                {% elif feedback_color == 'orange' %}📈
+                {% else %}💡{% endif %}
+            </div>
+            <div>
+                <h3 style="margin:0; font-size:1.4rem;
+                    {% if feedback_color == 'green' %}color:#065f46;
+                    {% elif feedback_color == 'blue' %}color:#1e3a8a;
+                    {% elif feedback_color == 'orange' %}color:#7c2d12;
+                    {% else %}color:#7f1d1d;{% endif %}
+                ">
+                    {{ feedback_title }}
+                </h3>
+                <span style="
+                    font-size:0.78rem; font-weight:600; letter-spacing:0.05em;
+                    text-transform:uppercase; padding: 3px 10px; border-radius:20px;
+                    {% if feedback_color == 'green' %}background:#10b981; color:white;
+                    {% elif feedback_color == 'blue' %}background:#3b82f6; color:white;
+                    {% elif feedback_color == 'orange' %}background:#f97316; color:white;
+                    {% else %}background:#ef4444; color:white;{% endif %}
+                ">
+                    {% if feedback_badge == 'top' %}Top Performer
+                    {% elif feedback_badge == 'good' %}Good Standing
+                    {% elif feedback_badge == 'average' %}Average
+                    {% else %}Needs Work{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- Feedback Summary -->
+        <p style="
+            font-size:1rem; line-height:1.7; margin-bottom:20px;
+            {% if feedback_color == 'green' %}color:#065f46;
+            {% elif feedback_color == 'blue' %}color:#1e3a8a;
+            {% elif feedback_color == 'orange' %}color:#431407;
+            {% else %}color:#7f1d1d;{% endif %}
+        ">
+            {{ feedback_summary }}
+        </p>
+
+        <!-- Improvement Points -->
+        <div style="
+            background: rgba(255,255,255,0.6);
+            border-radius: 10px;
+            padding: 20px 24px;
+        ">
+            <p style="margin:0 0 14px 0; font-weight:700; font-size:1rem;
+                {% if feedback_color == 'green' %}color:#065f46;
+                {% elif feedback_color == 'blue' %}color:#1e3a8a;
+                {% elif feedback_color == 'orange' %}color:#7c2d12;
+                {% else %}color:#7f1d1d;{% endif %}
+            ">
+                📌 Areas to Focus On:
+            </p>
+            <ul style="margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px;">
+                {% for point in feedback_points %}
+                <li style="
+                    font-size:0.95rem; line-height:1.6;
+                    {% if feedback_color == 'green' %}color:#064e3b;
+                    {% elif feedback_color == 'blue' %}color:#1e3a8a;
+                    {% elif feedback_color == 'orange' %}color:#431407;
+                    {% else %}color:#7f1d1d;{% endif %}
+                ">
+                    {{ point }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Score Bar -->
+        <div style="margin-top:22px;">
+            <p style="margin:0 0 6px 0; font-size:0.85rem; font-weight:600;
+                {% if feedback_color == 'green' %}color:#065f46;
+                {% elif feedback_color == 'blue' %}color:#1e3a8a;
+                {% elif feedback_color == 'orange' %}color:#7c2d12;
+                {% else %}color:#7f1d1d;{% endif %}
+            ">Your Score Progress</p>
+            <div style="background:rgba(255,255,255,0.5); border-radius:50px; height:12px; overflow:hidden;">
+                <div style="
+                    height:100%; border-radius:50px;
+                    width: {{ (overall_score / 10 * 100)|int }}%;
+                    transition: width 1s ease;
+                    {% if feedback_color == 'green' %}background:#10b981;
+                    {% elif feedback_color == 'blue' %}background:#3b82f6;
+                    {% elif feedback_color == 'orange' %}background:#f97316;
+                    {% else %}background:#ef4444;{% endif %}
+                "></div>
+            </div>
+            <p style="margin:6px 0 0 0; font-size:0.85rem; text-align:right; font-weight:700;
+                {% if feedback_color == 'green' %}color:#065f46;
+                {% elif feedback_color == 'blue' %}color:#1e3a8a;
+                {% elif feedback_color == 'orange' %}color:#7c2d12;
+                {% else %}color:#7f1d1d;{% endif %}
+            ">{{ overall_score }}/10</p>
+        </div>
+
+    </div>
+    <!-- END FEEDBACK SECTION -->
+
+</div>
+
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+// ================= RADAR CHART =================
+
+new Chart(document.getElementById("scoreChart"), {
+    type: 'radar',
+    data: {
+        labels: [
+            "Technical Knowledge",
+            "Clarity",
+            "Depth",
+            "Examples",
+            "Confidence"
+        ],
+        datasets: [{
+            label: "Performance",
+            data: [
+                {{ overall_score }},
+                {{ overall_score }},
+                {{ overall_score }},
+                {{ overall_score }},
+                {{ overall_score }}
+            ],
+            backgroundColor: "rgba(34,197,94,0.25)",
+            borderColor: "#22c55e",
+            pointBackgroundColor: "#22c55e",
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            r: {
+                min: 0,
+                max: 10,
+                ticks: {
+                    stepSize: 2,
+                    backdropColor: "transparent",
+                    color: "#94a3b8",
+                    font: { size: 11 }
+                },
+                pointLabels: {
+                    color: "#e2e8f0",
+                    font: { size: 12 }
+                },
+                grid: {
+                    color: "rgba(148, 163, 184, 0.5)"
+                },
+                angleLines: {
+                    color: "rgba(148, 163, 184, 0.5)"
+                }
+            }
+        }
+    }
+});
+
+
+// ================= PLAGIARISM PIE CHART =================
+
+const plagiarismPercent = {{ plagiarism }};
+const originalPercent = 100 - plagiarismPercent;
+
+new Chart(document.getElementById("plagiarismChart"), {
+    type: 'pie',
+    data: {
+        labels: ['Plagiarized', 'Original'],
+        datasets: [{
+            data: [plagiarismPercent, originalPercent],
+            backgroundColor: [
+                'rgba(255, 0, 0, 0.8)',
+                'rgba(0, 200, 0, 0.8)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        plugins: {
+            title: {
+                display: true,
+                text: 'Plagiarism Analysis (%)'
+            }
+        }
+    }
+});
+
+</script>
+
+{% endblock %}

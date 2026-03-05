@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+    <h2>Start New Interview</h2>
+
+    <form action="/start_interview" method="POST">
+
+        <label>Select Role</label>
+        <select name="role" required>
+            <option value="Software Engineer">Software Engineer</option>
+            <option value="Data Scientist">Data Scientist</option>
+            <option value="Machine Learning Engineer">Machine Learning Engineer</option>
+            <option value="Frontend Developer">Frontend Developer</option>
+            <option value="Backend Developer">Backend Developer</option>
+            <option value="DevOps Engineer">DevOps Engineer</option>
+            <option value="Cybersecurity Analyst">Cybersecurity Analyst</option>
+            <option value="Cloud Engineer">Cloud Engineer</option>
+        </select>
+
+        <label>Interview Type</label>
+        <select name="type" required>
+            <option value="technical">Technical</option>
+            <option value="behavioural">Behavioural</option>
+        </select>
+
+        <button type="submit">Start Interview</button>
+    </form>
+</div>
+
+{% endblock %}
