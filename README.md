@@ -303,8 +303,7 @@ Includes:
 • Automated proctoring rules
 • Violation-triggered interview submission
 
-📂 Project Structure
-AI_INTERVIEW_PLATFORM/
+## 📂 Project Structure
 │
 ├── app.py
 ├── config.py
@@ -345,7 +344,10 @@ AI_INTERVIEW_PLATFORM/
 │
 └── instance/
     └── interview.db
+```
+    
 ⚙️ Installation
+
 Clone the repository
 git clone https://github.com/yourusername/ai-interview-platform.git
 cd ai-interview-platform
@@ -370,6 +372,7 @@ Main Python dependencies:
 Install using:
 
 pip install -r requirements.txt
+
 🧪 Example Interview Workflow
 
 1️⃣ Candidate registers or logs in
