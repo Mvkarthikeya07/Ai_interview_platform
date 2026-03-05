@@ -302,7 +302,7 @@ Includes:
 • Session validation
 • Automated proctoring rules
 • Violation-triggered interview submission
-```bash
+```
 ## 📂 Project Structure
 │
 ├── app.py
