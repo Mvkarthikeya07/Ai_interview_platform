@@ -1,4 +1,4 @@
-🤖 AI-Driven Adaptive Interviewing & Candidate Evaluation Platform
+🤖 AI-Driven Adaptive Interview Simulation and Candidate Evaluation Platform with Intelligent Proctoring
 
 Intelligent Interview Simulation with Automated Assessment and Behavioral Proctoring
 
@@ -112,7 +112,7 @@ After completing the interview, the platform generates a detailed evaluation rep
 
 📋 Detailed Answer Evaluation
 
-<img width="1366" height="768" alt="Screenshot (226)" src="https://github.com/user-attachments/assets/76978b85-afe4-4b91-9c63-e3c8123aaf4e" />
+<img width="1366" height="768" alt="Screenshot (227)" src="https://github.com/user-attachments/assets/4df613de-4266-440b-a612-4611dcba9bba" />
 
 <img width="1366" height="768" alt="Screenshot (228)" src="https://github.com/user-attachments/assets/d635213b-4aa8-43cf-9478-f30dd47deccf" />
 
