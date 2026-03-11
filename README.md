@@ -163,6 +163,11 @@ Structured performance analytics for interview feedback
 
 The hackathon experience provided valuable exposure to rapid prototyping, collaborative problem-solving, and real-world AI system design in a competitive innovation environment.
 
+🔗 LinkedIn Post
+
+The hackathon recognition and certificate can be viewed here:
+https://www.linkedin.com/posts/m-v-karthikeya-b26a2131b_hackathon-axioml2026-artificialintelligence-activity-7437492275678515200-QQbR?utm_source=share&utm_medium=member_desktop&rcm=ACoAAFEhlw4BT-6V0rnLIZSzBIoK7YvV2QlbHLc
+
 🧠 Core System Components
 
 1️⃣ Adaptive AI Question Engine
